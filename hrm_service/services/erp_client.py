@@ -1,0 +1,27 @@
+import logging
+import requests
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
+
+
+class ERPClient:
+    def __init__(self):
+        self.base_url = settings.ERP_BACKEND_URL
+        self.service_key = settings.SERVICE_API_KEY
+
+    def _headers(self):
+        return {"X-Service-Key": self.service_key, "Content-Type": "application/json"}
+
+    def create_journal_entry(self, payload: dict) -> dict | None:
+        """Post a payroll journal entry to ERP Accounting."""
+        try:
+            resp = requests.post(
+                f"{self.base_url}/api/accounting/journal-entries/create/",
+                json=payload, headers=self._headers(), timeout=10,
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            logger.error("Failed to create journal entry: %s", e)
+            return None
