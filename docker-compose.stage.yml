@@ -1,5 +1,3 @@
-name: hrm-stage
-
 services:
   db:
     image: postgres:15
