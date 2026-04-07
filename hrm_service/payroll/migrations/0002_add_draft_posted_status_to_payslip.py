@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('payroll', '0XXX_previous_migration'),  # Update with actual previous migration
+        ('payroll', '0001_initial'),
     ]
 
     operations = [
