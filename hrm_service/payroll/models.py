@@ -52,7 +52,7 @@ class PayrollRun(BaseModel):
     period_start = models.DateField()
     period_end = models.DateField()
     pay_date = models.DateField(null=True, blank=True)
-    state = models.CharField(max_length=20, choices=STATES, default="draft")
+    state = models.CharField(max_length=20, choices=STATES, default="draft", db_index=True)
     total_gross = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0"))
     total_deductions = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0"))
     total_net = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0"))
@@ -61,6 +61,9 @@ class PayrollRun(BaseModel):
     notes = models.TextField(blank=True)
     created_by = models.UUIDField(null=True, blank=True)
     approved_by = models.UUIDField(null=True, blank=True)
+    drafted_at = models.DateTimeField(null=True, blank=True)
+    posted_at = models.DateTimeField(null=True, blank=True, help_text='When payroll was approved/posted')
+    posted_by = models.UUIDField(null=True, blank=True, help_text='User ID who posted/approved the payroll')
 
     class Meta:
         ordering = ["-period_start"]

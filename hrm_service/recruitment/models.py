@@ -11,7 +11,7 @@ class JobPosting(BaseModel):
     title = models.CharField(max_length=200)
     department = models.ForeignKey("organization.Department", on_delete=models.SET_NULL, null=True, blank=True)
     position = models.ForeignKey("organization.Position", on_delete=models.SET_NULL, null=True, blank=True)
-    state = models.CharField(max_length=20, choices=STATES, default="draft")
+    state = models.CharField(max_length=20, choices=STATES, default="draft", db_index=True)
     job_type = models.CharField(max_length=20, choices=JOB_TYPES, default="full_time")
     location = models.CharField(max_length=200, blank=True)
     description = models.TextField()
@@ -21,6 +21,9 @@ class JobPosting(BaseModel):
     vacancies = models.PositiveIntegerField(default=1)
     deadline = models.DateField(null=True, blank=True)
     created_by = models.UUIDField(null=True, blank=True)
+    drafted_at = models.DateTimeField(null=True, blank=True)
+    posted_at = models.DateTimeField(null=True, blank=True, help_text='When job was published/opened')
+    posted_by = models.UUIDField(null=True, blank=True, help_text='User ID who posted the job')
 
     def __str__(self):
         return self.title

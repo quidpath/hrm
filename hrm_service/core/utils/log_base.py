@@ -1,72 +1,52 @@
-# core/utils/log_base.py
+# hrm_service/core/utils/log_base.py
 import logging
-import uuid
-
-from django.db import transaction
-
-from hrm_service.audit.models import TransactionLog
-from hrm_service.core.utils.request_parser import get_client_ip
 
 logger = logging.getLogger(__name__)
 
 
 class TransactionLogBase:
-    """Logs important steps to audit.TransactionLog."""
+    """
+    Simple logging utility for HRM service.
+    """
 
     @classmethod
     def log(
         cls,
-        action,
+        transaction_type: str,
         user=None,
         message="",
         state_name="Active",
         extra=None,
-        notification_resp=None,
         request=None,
     ):
-        instance = cls()
-        return instance._log_transaction(
-            action=action,
-            user=user,
-            message=message,
-            state_name=state_name,
-            extra=extra,
-            notification_resp=notification_resp,
-            request=request,
-        )
-
-    def _log_transaction(
-        self,
-        action,
-        user=None,
-        message="",
-        state_name="Active",
-        extra=None,
-        notification_resp=None,
-        request=None,
-    ):
+        """
+        Log a transaction/event.
+        """
         try:
-            with transaction.atomic():
-                user_id = None
-                if user is not None:
-                    user_id = getattr(user, "id", user) if not isinstance(user, int) else user
-                source_ip = get_client_ip(request) if request else "0.0.0.0"
-                details = extra or {}
-                if request:
-                    details["user_agent"] = request.META.get("HTTP_USER_AGENT", "")
-                ref = str(uuid.uuid4())
-                txn = TransactionLog.objects.create(
-                    reference=ref,
-                    action=action,
-                    user_id=user_id,
-                    corporate_id=getattr(request, "corporate_id", None) if request else None,
-                    message=message,
-                    state=state_name,
-                    source_ip=source_ip,
-                    extra=details,
-                )
-                logger.info(f"[TransactionLog] {action} | user={user_id} | state={state_name}")
-                return txn
+            user_id = user if isinstance(user, str) else (user.get("id") if isinstance(user, dict) else None)
+            ip = cls._get_request_ip(request) if request else "0.0.0.0"
+            
+            log_message = f"[{transaction_type}] {message} | user={user_id} | state={state_name} | ip={ip}"
+            
+            if state_name == "Completed":
+                logger.info(log_message)
+            elif state_name == "Failed":
+                logger.error(log_message)
+            else:
+                logger.debug(log_message)
+                
+            return True
+            
         except Exception as e:
-            logger.exception(f"[TransactionLog] Failed logging {action}: {e}")
+            logger.exception(f"[TransactionLog] Failed logging {transaction_type}: {e}")
+            return False
+
+    @classmethod
+    def _get_request_ip(cls, request):
+        """Extract client IP from request"""
+        if not request:
             return None
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0]
+        return request.META.get("REMOTE_ADDR")
