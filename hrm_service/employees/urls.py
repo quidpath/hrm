@@ -1,7 +1,9 @@
 from django.urls import path
 from .views import add_emergency_contact, employee_detail, employee_list_create, upload_document
+from .summary_views import hrm_summary
 
 urlpatterns = [
+    path("summary/", hrm_summary, name="hrm_summary"),
     path("", employee_list_create),
     path("<uuid:pk>/", employee_detail),
     path("<uuid:pk>/documents/", upload_document),

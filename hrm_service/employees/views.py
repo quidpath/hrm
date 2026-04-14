@@ -6,6 +6,7 @@ from hrm_service.core.utils.request_parser import get_clean_data
 from hrm_service.core.utils.response import ResponseProvider
 from hrm_service.core.utils.log_base import TransactionLogBase
 from hrm_service.core.services.registry import ServiceRegistry
+from hrm_service.core.utils.pagination import paginate_qs
 
 
 @csrf_exempt
@@ -30,8 +31,8 @@ def employee_list_create(request):
         q = Q(corporate_id=corporate_id)
         
         # Search filter
-        search = data.get("search") or request.GET.get("search")
-        if search:
+        search = data.get("search") or request.GET.get("search", "")
+        if search and search.strip():
             q &= (
                 Q(first_name__icontains=search) |
                 Q(last_name__icontains=search) |
@@ -50,18 +51,21 @@ def employee_list_create(request):
             q &= Q(employment_status=status)
         
         try:
-            employees = registry.database("employee", "filter", data=q)
+            from hrm_service.employees.models import Employee
+            qs = Employee.objects.filter(q).order_by("-date_joined")
+            page_qs, meta = paginate_qs(qs, request)
+            employees = registry.serialize_data(page_qs)
             
             TransactionLogBase.log(
                 transaction_type="EMPLOYEE_LIST_SUCCESS",
                 user=user_id,
-                message=f"Retrieved {len(employees)} employees",
+                message=f"Retrieved {meta['count']} employees",
                 state_name="Completed",
                 request=request
             )
             
             return ResponseProvider.success_response(
-                data={"count": len(employees), "results": employees},
+                data={"results": employees, **meta},
                 status=200
             )
         except Exception as e:
