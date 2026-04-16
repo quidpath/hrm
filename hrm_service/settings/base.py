@@ -81,6 +81,8 @@ POS_SERVICE_SECRET = os.environ.get("POS_SERVICE_SECRET", "")
 CRM_SERVICE_SECRET = os.environ.get("CRM_SERVICE_SECRET", "")
 PROJECTS_SERVICE_SECRET = os.environ.get("PROJECTS_SERVICE_SECRET", "")
 BILLING_SERVICE_SECRET = os.environ.get("BILLING_SERVICE_SECRET", "")
+# Legacy alias
+SERVICE_API_KEY = ERP_SERVICE_SECRET or HRM_SERVICE_SECRET
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 CACHES = {"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": REDIS_URL}}
