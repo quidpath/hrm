@@ -1,10 +1,12 @@
-from django.db import migrations, models
+from django.db import migrations
 
 
 class Migration(migrations.Migration):
     """
-    Safe migration using IF NOT EXISTS to handle cases where columns
-    were already added directly to the database.
+    This migration was previously applied with AddField operations.
+    Replaced with a no-op to avoid duplicate column errors on databases
+    where the columns already exist from a prior deployment.
+    The actual columns are added safely in 0003.
     """
 
     dependencies = [
@@ -12,23 +14,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Use RunSQL with IF NOT EXISTS to safely add columns that may already exist
-        migrations.RunSQL(
-            sql=[
-                "ALTER TABLE payroll_payrollrun ADD COLUMN IF NOT EXISTS drafted_at TIMESTAMP WITH TIME ZONE NULL;",
-                "ALTER TABLE payroll_payrollrun ADD COLUMN IF NOT EXISTS posted_at TIMESTAMP WITH TIME ZONE NULL;",
-                "ALTER TABLE payroll_payrollrun ADD COLUMN IF NOT EXISTS posted_by UUID NULL;",
-                "ALTER TABLE payroll_payrollrun ADD COLUMN IF NOT EXISTS state VARCHAR(20) NOT NULL DEFAULT 'draft';" if False else "SELECT 1;",
-            ],
-            reverse_sql=[
-                "ALTER TABLE payroll_payrollrun DROP COLUMN IF EXISTS drafted_at;",
-                "ALTER TABLE payroll_payrollrun DROP COLUMN IF EXISTS posted_at;",
-                "ALTER TABLE payroll_payrollrun DROP COLUMN IF EXISTS posted_by;",
-            ],
-        ),
-        # Update the state field to add db_index (safe - just adds index)
-        migrations.RunSQL(
-            sql="CREATE INDEX IF NOT EXISTS payroll_payrollrun_state_idx ON payroll_payrollrun (state);",
-            reverse_sql="DROP INDEX IF EXISTS payroll_payrollrun_state_idx;",
-        ),
+        # No-op: columns were added in a previous deployment
+        # Safe version is in 0003
     ]
