@@ -10,23 +10,20 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='jobposting',
-            name='drafted_at',
-            field=models.DateTimeField(blank=True, null=True),
+        migrations.RunSQL(
+            sql=[
+                "ALTER TABLE recruitment_jobposting ADD COLUMN IF NOT EXISTS drafted_at TIMESTAMP WITH TIME ZONE NULL;",
+                "ALTER TABLE recruitment_jobposting ADD COLUMN IF NOT EXISTS posted_at TIMESTAMP WITH TIME ZONE NULL;",
+                "ALTER TABLE recruitment_jobposting ADD COLUMN IF NOT EXISTS posted_by UUID NULL;",
+            ],
+            reverse_sql=[
+                "ALTER TABLE recruitment_jobposting DROP COLUMN IF EXISTS drafted_at;",
+                "ALTER TABLE recruitment_jobposting DROP COLUMN IF EXISTS posted_at;",
+                "ALTER TABLE recruitment_jobposting DROP COLUMN IF EXISTS posted_by;",
+            ],
         ),
-        migrations.AddField(
-            model_name='jobposting',
-            name='posted_at',
-            field=models.DateTimeField(blank=True, null=True, help_text='When job was published/opened'),
-        ),
-        migrations.AddField(
-            model_name='jobposting',
-            name='posted_by',
-            field=models.UUIDField(blank=True, null=True, help_text='User ID who posted the job'),
-        ),
-        migrations.AddIndex(
-            model_name='jobposting',
-            index=models.Index(fields=['state'], name='jobposting_state_idx'),
+        migrations.RunSQL(
+            sql="CREATE INDEX IF NOT EXISTS jobposting_state_idx ON recruitment_jobposting (state);",
+            reverse_sql="DROP INDEX IF EXISTS jobposting_state_idx;",
         ),
     ]
