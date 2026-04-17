@@ -1,8 +1,7 @@
 #!/bin/bash
 set -euo pipefail
-echo "Starting HRM Service"
-APP_DIR="/app"
-cd "$APP_DIR"
+echo "Starting HRM Service (Safe Mode)"
+
 if [ -f .env ]; then
   while IFS= read -r line || [ -n "$line" ]; do
     [[ "$line" =~ ^[[:space:]]*# ]] && continue
@@ -14,8 +13,26 @@ if [ -f .env ]; then
     fi
   done < .env
 fi
+
 PYTHON=$(command -v python3 || command -v python)
-$PYTHON manage.py migrate --noinput
+
+# Fix migration state if needed
+echo "Checking migration state..."
+$PYTHON manage.py fix_migration_state --dry-run
+
+# Try to migrate, but handle conflicts gracefully
+echo "Running migrations..."
+if ! $PYTHON manage.py migrate --noinput; then
+    echo "Migration failed, attempting to fix migration state..."
+    $PYTHON manage.py fix_migration_state
+    echo "Retrying migrations..."
+    $PYTHON manage.py migrate --noinput
+fi
+
 $PYTHON manage.py collectstatic --noinput
 $PYTHON manage.py createsuperuser --noinput || true
-exec gunicorn hrm_service.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers ${WORKERS:-2} --timeout 120
+
+exec gunicorn hrm_service.wsgi:application \
+    --bind 0.0.0.0:${PORT:-8000} \
+    --workers ${WORKERS:-2} \
+    --timeout 120
