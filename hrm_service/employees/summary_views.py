@@ -67,16 +67,16 @@ def hrm_summary(request):
     
     # On Leave Today
     on_leave_today = LeaveRequest.objects.filter(
-        corporate_id=cid,
-        status='approved',
+        employee__corporate_id=cid,
+        state='approved',
         start_date__lte=today,
         end_date__gte=today
     ).count()
     
     # Pending Leave Requests
     pending_leaves = LeaveRequest.objects.filter(
-        corporate_id=cid,
-        status='pending'
+        employee__corporate_id=cid,
+        state='pending'
     ).count()
     
     # Departments Count
