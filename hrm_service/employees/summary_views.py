@@ -48,13 +48,13 @@ def hrm_summary(request):
     # Total Employees
     total_employees = Employee.objects.filter(
         corporate_id=cid,
-        status='active'
+        employment_status='active'
     ).count()
     
     prev_employees = Employee.objects.filter(
         corporate_id=cid,
-        status='active',
-        join_date__lt=month_start.date()
+        employment_status='active',
+        date_joined__lt=month_start.date()
     ).count()
     
     employees_change = calc_change(total_employees, prev_employees)
@@ -62,7 +62,7 @@ def hrm_summary(request):
     # New Employees This Month
     new_this_month = Employee.objects.filter(
         corporate_id=cid,
-        join_date__gte=month_start.date()
+        date_joined__gte=month_start.date()
     ).count()
     
     # On Leave Today
@@ -90,7 +90,7 @@ def hrm_summary(request):
         corporate_id=cid,
         is_active=True
     ).annotate(
-        employee_count=Count('employees', filter=Q(employees__status='active'))
+        employee_count=Count('employees', filter=Q(employees__employment_status='active'))
     )
     
     departments_data = [
