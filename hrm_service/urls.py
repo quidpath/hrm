@@ -11,4 +11,5 @@ urlpatterns = [
     path("api/hrm/leaves/", include("hrm_service.leaves.urls")),
     path("api/hrm/payroll/", include("hrm_service.payroll.urls")),
     path("api/hrm/performance/", include("hrm_service.performance.urls")),
+    path("api/hrm/assets/", include("hrm_service.hrm.urls_asset")),  # Asset query endpoints
 ]
