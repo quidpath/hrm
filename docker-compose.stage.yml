@@ -4,7 +4,7 @@ services:
     container_name: postgres_hrm_stage
     restart: unless-stopped
     volumes:
-      - /mnt/quidpath-hrm-db-stage/postgres:/var/lib/postgresql/data
+      - /mnt/ebs/hrm/postgres_data_stage:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -16,37 +16,57 @@ services:
       retries: 5
     networks:
       - hrm_network
-      - quidpath_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: hrm_redis_stage
+    restart: unless-stopped
+    networks:
+      - hrm_network
 
   backend:
     image: ${IMAGE_TAG}
     container_name: hrm-backend-stage
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8013:8000"
+      - "127.0.0.1:8010:8000"
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - .env
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       SECRET_KEY: ${SECRET_KEY}
       HRM_SERVICE_SECRET: ${HRM_SERVICE_SECRET}
       INVENTORY_SERVICE_URL: http://inventory-backend-stage:8000
       INVENTORY_SERVICE_SECRET: ${INVENTORY_SERVICE_SECRET}
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
-      ERP_BACKEND_URL: ${ERP_BACKEND_URL}
-      REDIS_URL: ${REDIS_URL}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      REDIS_URL: redis://redis:6379/0
       DJANGO_SETTINGS_MODULE: hrm_service.settings.stage
       DJANGO_ENV: stage
     volumes:
-      - /mnt/quidpath-hrm-stage-data/media:/app/media
-      - /mnt/quidpath-hrm-stage-data/staticfiles:/app/staticfiles
+      - /mnt/ebs/hrm/media_stage:/app/media
+      - /mnt/ebs/hrm/staticfiles_stage:/app/staticfiles
+    networks:
+      - hrm_network
+      - quidpath_network
+
+  celery:
+    image: ${IMAGE_TAG}
+    container_name: hrm-celery-stage
+    restart: unless-stopped
+    command: celery -A hrm_service worker -l info -Q payroll,default
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://redis:6379/0
+      DJANGO_SETTINGS_MODULE: hrm_service.settings.stage
     networks:
       - hrm_network
       - quidpath_network
